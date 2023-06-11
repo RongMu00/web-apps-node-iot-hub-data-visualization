@@ -12,20 +12,35 @@ $(document).ready(() => {
       this.deviceId = deviceId;
       this.maxLen = 50;
       this.timeData = new Array(this.maxLen);
+      this.lat = null;
+      this.lon = null;
+      this.address = null;
       this.temperatureData = new Array(this.maxLen);
       this.humidityData = new Array(this.maxLen);
+      this.CO2Data = new Array(this.maxLen);
+      this.PM25Data = new Array(this.maxLen);
     }
 
-    addData(time, temperature, humidity) {
+    addData(time, temperature, humidity, CO2, PM25) {
       this.timeData.push(time);
       this.temperatureData.push(temperature);
       this.humidityData.push(humidity || null);
+      this.CO2Data.push(CO2 || null);
+      this.PM25Data.push(PM25);
 
       if (this.timeData.length > this.maxLen) {
         this.timeData.shift();
         this.temperatureData.shift();
         this.humidityData.shift();
+        this.CO2Data.shift();
+        this.PM25Data.shift();
       }
+    }
+
+    addGPSData(latitude, longitude, address) {
+      this.lat = latitude;
+      this.lon = longitude;
+      this.address = address;
     }
   }
 
@@ -54,7 +69,34 @@ $(document).ready(() => {
   const trackedDevices = new TrackedDevices();
 
   // Define the chart axes
-  const chartData = {
+  // const chartData = {
+  //   datasets: [
+  //     {
+  //       fill: false,
+  //       label: 'Temperature',
+  //       yAxisID: 'Temperature',
+  //       borderColor: 'rgba(255, 204, 0, 1)',
+  //       pointBoarderColor: 'rgba(255, 204, 0, 1)',
+  //       backgroundColor: 'rgba(255, 204, 0, 0.4)',
+  //       pointHoverBackgroundColor: 'rgba(255, 204, 0, 1)',
+  //       pointHoverBorderColor: 'rgba(255, 204, 0, 1)',
+  //       spanGaps: true,
+  //     },
+  //     {
+  //       fill: false,
+  //       label: 'Humidity',
+  //       yAxisID: 'Humidity',
+  //       borderColor: 'rgba(24, 120, 240, 1)',
+  //       pointBoarderColor: 'rgba(24, 120, 240, 1)',
+  //       backgroundColor: 'rgba(24, 120, 240, 0.4)',
+  //       pointHoverBackgroundColor: 'rgba(24, 120, 240, 1)',
+  //       pointHoverBorderColor: 'rgba(24, 120, 240, 1)',
+  //       spanGaps: true,
+  //     }
+  //   ]
+  // };
+
+  const tempChartData = {
     datasets: [
       {
         fill: false,
@@ -66,7 +108,12 @@ $(document).ready(() => {
         pointHoverBackgroundColor: 'rgba(255, 204, 0, 1)',
         pointHoverBorderColor: 'rgba(255, 204, 0, 1)',
         spanGaps: true,
-      },
+      }
+    ]
+  }
+
+  const humidityChartData = {
+    datasets: [
       {
         fill: false,
         label: 'Humidity',
@@ -79,9 +126,41 @@ $(document).ready(() => {
         spanGaps: true,
       }
     ]
-  };
+  }
 
-  const chartOptions = {
+  // const chartOptions = {
+  //   scales: {
+  //     yAxes: [{
+  //       id: 'Temperature',
+  //       type: 'linear',
+  //       scaleLabel: {
+  //         labelString: 'Temperature (ºC)',
+  //         display: true,
+  //       },
+  //       position: 'left',
+  //       ticks: {
+  //         suggestedMin: 0,
+  //         suggestedMax: 40,
+  //         beginAtZero: true
+  //       }
+  //     },
+  //     {
+  //       id: 'Humidity',
+  //       type: 'linear',
+  //       scaleLabel: {
+  //         labelString: 'Humidity (%)',
+  //         display: true,
+  //       },
+  //       position: 'right',
+  //       ticks: {
+  //         suggestedMin: 30,
+  //         suggestedMax: 70,
+  //         beginAtZero: false
+  //       }
+  //     }]
+  //   }
+  // };
+  const tempChartOptions = {
     scales: {
       yAxes: [{
         id: 'Temperature',
@@ -93,36 +172,224 @@ $(document).ready(() => {
         position: 'left',
         ticks: {
           suggestedMin: 0,
-          suggestedMax: 100,
-          beginAtZero: true
-        }
-      },
-      {
-        id: 'Humidity',
-        type: 'linear',
-        scaleLabel: {
-          labelString: 'Humidity (%)',
-          display: true,
-        },
-        position: 'right',
-        ticks: {
-          suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMax: 40,
           beginAtZero: true
         }
       }]
     }
   };
 
+  const humidityChartOptions = {
+    scales: {
+      yAxes: [{
+        id: 'Humidity',
+        type: 'linear',
+        scaleLabel: {
+          labelString: 'Humidity (%)',
+          display: true,
+        },
+        position: 'left',
+        ticks: {
+          suggestedMin: 30,
+          suggestedMax: 70,
+          beginAtZero: false
+        }
+      }]
+    }
+  };
+
+
+  // const co2pm25ChartData = {
+  //   datasets: [
+  //       {
+  //           fill: false,
+  //           label: 'CO2',
+  //           yAxisID: 'CO2',
+  //           borderColor: 'rgba(100, 200, 50, 1)',
+  //           pointBoarderColor: 'rgba(100, 200, 50, 1)',
+  //           backgroundColor: 'rgba(100, 200, 50, 0.4)',
+  //           pointHoverBackgroundColor: 'rgba(100, 200, 50, 1)',
+  //           pointHoverBorderColor: 'rgba(100, 200, 50, 1)',
+  //           spanGaps: true,
+  //       },
+  //       {
+  //         fill: false,
+  //         label: 'PM25',
+  //         yAxisID: 'PM25',
+  //         borderColor: 'rgba(255, 100, 100, 1)',
+  //         pointBoarderColor: 'rgba(255, 100, 100, 1)',
+  //         backgroundColor: 'rgba(255, 100, 100, 0.4)',
+  //         pointHoverBackgroundColor: 'rgba(255, 100, 100, 1)',
+  //         pointHoverBorderColor: 'rgba(255, 100, 100, 1)',
+  //         spanGaps: true,
+  //     }
+  //   ]
+  // };
+
+  const co2ChartData = {
+    datasets: [
+      {
+          fill: false,
+          label: 'CO2',
+          yAxisID: 'CO2',
+          borderColor: 'rgba(100, 200, 50, 1)',
+          pointBoarderColor: 'rgba(100, 200, 50, 1)',
+          backgroundColor: 'rgba(100, 200, 50, 0.4)',
+          pointHoverBackgroundColor: 'rgba(100, 200, 50, 1)',
+          pointHoverBorderColor: 'rgba(100, 200, 50, 1)',
+          spanGaps: true,
+      }
+    ]
+  };
+
+  const pm25ChartData = {
+    datasets: [
+      {
+          fill: false,
+          label: 'PM25',
+          yAxisID: 'PM25',
+          borderColor: 'rgba(255, 100, 100, 1)',
+          pointBoarderColor: 'rgba(255, 100, 100, 1)',
+          backgroundColor: 'rgba(255, 100, 100, 0.4)',
+          pointHoverBackgroundColor: 'rgba(255, 100, 100, 1)',
+          pointHoverBorderColor: 'rgba(255, 100, 100, 1)',
+          spanGaps: true,
+      }
+    ]
+  }
+
+  // const co2pm25ChartOptions = {
+  //   scales: {
+  //     yAxes: [{
+  //       id: 'CO2',
+  //       type: 'linear',
+  //       scaleLabel: {
+  //         labelString: 'CO2 concentration (ppm)',
+  //         display: true,
+  //       },
+  //       position: 'left',
+  //       ticks: {
+  //         suggestedMin: 400,
+  //         suggestedMax: 1400, // Adjust this as per your requirement
+  //         beginAtZero: false,
+  //       }
+  //     },
+  //     {
+  //       id: 'PM25',
+  //       type: 'linear',
+  //       scaleLabel: {
+  //         labelString: 'PM2.5 (µg/m³)',
+  //         display: true,
+  //       },
+  //       position: 'right',
+  //       ticks: {
+  //         suggestedMin: 0,
+  //         suggestedMax: 10, // Adjust this as per your requirement
+  //         beginAtZero: true
+  //       }
+  //     }]
+  //   }
+
+  // };
+
+    const co2ChartOptions = {
+      scales: {
+        yAxes: [{
+          id: 'CO2',
+          type: 'linear',
+          scaleLabel: {
+            labelString: 'CO2 concentration (ppm)',
+            display: true,
+          },
+          position: 'left',
+          ticks: {
+            suggestedMin: 400,
+            suggestedMax: 1400, // Adjust this as per your requirement
+            beginAtZero: false,
+          }
+        }]
+      }
+    };
+
+    const pm25ChartOptions = {
+      scales: {
+        yAxes: [{
+          id: 'PM25',
+          type: 'linear',
+          scaleLabel: {
+            labelString: 'PM2.5 (µg/m³)',
+            display: true,
+          },
+          position: 'left',
+          ticks: {
+            suggestedMin: 0,
+            suggestedMax: 10, // Adjust this as per your requirement
+            beginAtZero: true
+          }
+        }]
+      }
+    };
+
+
+
   // Get the context of the canvas element we want to select
-  const ctx = document.getElementById('iotChart').getContext('2d');
-  const myLineChart = new Chart(
-    ctx,
+  // const ctx = document.getElementById('iotChart').getContext('2d');
+  // const myLineChart = new Chart(
+  //   ctx,
+  //   {
+  //     type: 'line',
+  //     data: chartData,
+  //     options: chartOptions,
+  //   });
+
+  const tempCtx = document.getElementById('tempChart').getContext('2d');
+  const tempLineChart = new Chart(
+    tempCtx,
     {
       type: 'line',
-      data: chartData,
-      options: chartOptions,
-    });
+      data: tempChartData,
+      options:tempChartOptions,
+    }
+  );
+
+  const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+  const humidityLineChart = new Chart(
+    humidityCtx,
+    {
+      type: 'line',
+      data: humidityChartData,
+      options: humidityChartOptions,
+    }
+  );
+
+  // const co2pm25Ctx = document.getElementById('co2pm25Chart').getContext('2d');
+  // const co2pm25LineChart = new Chart(
+  //   co2pm25Ctx,
+  //   {
+  //     type: "line",
+  //     data: co2pm25ChartData,
+  //     options: co2pm25ChartOptions,
+  //   }
+  // )
+  const co2Ctx = document.getElementById('co2Chart').getContext('2d');
+  const co2LineChart = new Chart(
+    co2Ctx,
+    {
+      type: "line",
+      data: co2ChartData,
+      options: co2ChartOptions,
+    }
+  );
+
+  const pm25Ctx = document.getElementById('pm25Chart').getContext('2d');
+  const pm25LineChart = new Chart(
+    pm25Ctx,
+    {
+      type: "line",
+      data: pm25ChartData,
+      options: pm25ChartOptions,
+    }
+  );
 
   // Manage a list of devices in the UI, and update which device data the chart is showing
   // based on selection
@@ -131,10 +398,35 @@ $(document).ready(() => {
   const listOfDevices = document.getElementById('listOfDevices');
   function OnSelectionChange() {
     const device = trackedDevices.findDevice(listOfDevices[listOfDevices.selectedIndex].text);
-    chartData.labels = device.timeData;
-    chartData.datasets[0].data = device.temperatureData;
-    chartData.datasets[1].data = device.humidityData;
-    myLineChart.update();
+    // chartData.labels = device.timeData;
+    // chartData.datasets[0].data = device.temperatureData;
+    // chartData.datasets[1].data = device.humidityData;
+    // myLineChart.update();
+
+    tempChartData.labels = device.timeData;
+    tempChartData.datasets[0].data = device.temperatureData;
+    tempLineChart.update();
+
+    humidityChartData.labels = device.timeData;
+    humidityChartData.datasets[0].data = device.humidityData;
+    humidityLineChart.update();
+
+    // co2pm25ChartData.labels = device.timeData;
+    // co2pm25ChartData.datasets[0].data = device.CO2Data;
+    // co2pm25ChartData.datasets[1].data = device.PM25Data;
+    // co2pm25LineChart.update();
+    co2ChartData.labels = device.timeData;
+    co2ChartData.datasets[0].data = device.CO2Data;
+    co2LineChart.update();
+
+    pm25ChartData.labels = device.timeData;
+    pm25ChartData.datasets[0].data = device.PM25Data;
+    pm25LineChart.update();
+
+    // const latitude = messageData.IotData.latitude;//+
+    // const longitude = messageData.IotData.longitude;//+
+
+    // document.getElementById('address').innerText = `Address: ${device.address || 'N/A'};`//+
   }
   listOfDevices.addEventListener('change', OnSelectionChange, false);
 
@@ -154,18 +446,45 @@ $(document).ready(() => {
         return;
       }
 
+      // if(!messageData.MessageData || (!messageData.IotData.CO2 && !messageData.IotData.PM25)) {
+      //   return;
+      // }
+
       // find or add device to list of tracked devices
       const existingDeviceData = trackedDevices.findDevice(messageData.DeviceId);
+      const latitude = messageData.IotData.latitude;//+
+      const longitude = messageData.IotData.longitude;//+
+
+      // Your Google API key
+      const apiKey = 'AIzaSyAXko3W0nirdWf7A6vy-__Emmn_qEGnKgk';//+
+
+      // Fetch address from Google Geocoding API
+      fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`)//+
+          .then(response => response.json())
+          .then(data => {
+              // Get and display address
+              if (data.status === "OK") {
+                  const address = data.results[0].formatted_address;
+                  document.getElementById('address').textContent = 'Current Location: ' + address;
+              } else {
+                  console.error('Geocoder failed due to: ' + data.status);
+              }
+          })
+          .catch(error => console.error(error));
+
+      // document.getElementById('gps-lat').innerText = `Latitude: ${device.lat || 'N/A'}`;//+
+      // document.getElementById('gps-lon').innerText = `Longitude: ${device.lon || 'N/A'}`;//
 
       if (existingDeviceData) {
-        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity);
+        existingDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.CO2, messageData.IotData.PM25);
+        //existingDeviceData.addGPSData(latitude, longitude, address);  // +
       } else {
         const newDeviceData = new DeviceData(messageData.DeviceId);
         trackedDevices.devices.push(newDeviceData);
         const numDevices = trackedDevices.getDevicesCount();
         deviceCount.innerText = numDevices === 1 ? `${numDevices} device` : `${numDevices} devices`;
-        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity);
-
+        newDeviceData.addData(messageData.MessageDate, messageData.IotData.temperature, messageData.IotData.humidity, messageData.IotData.CO2, messageData.IotData.PM25);
+        //newDeviceData.addGPSData(latitude, longitude, address);        //+
         // add device to the UI list
         const node = document.createElement('option');
         const nodeText = document.createTextNode(messageData.DeviceId);
@@ -180,7 +499,13 @@ $(document).ready(() => {
         }
       }
 
-      myLineChart.update();
+      //myLineChart.update();
+      tempLineChart.update();
+      humidityLineChart.update();
+      // co2pm25LineChart.update();
+      co2LineChart.update();
+      pm25LineChart.update();
+
     } catch (err) {
       console.error(err);
     }

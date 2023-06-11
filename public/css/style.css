@@ -10,6 +10,16 @@ body {
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: space-between;
+  align-items: center;
+}
+
+.availableDevice {
+  order: 2;
+}
+
+.title {
+  order: 1;
+  text-align: center;
 }
 
 a {
@@ -43,4 +53,24 @@ select::-ms-expand {
 
 select:disabled::-ms-expand {
   background: #f60;
+}
+
+.temp, .humidity, .co2, .pm25 {
+  width: 80%;
+  height: auto;
+  margin: auto;
+}
+
+/* .grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-gap: 20px;
+  margin-bottom: 20px;
+} */
+
+#address {
+  font-family: Arial, sans-serif;
+  margin-top: 50px;
+  font-size: 20px;
 }

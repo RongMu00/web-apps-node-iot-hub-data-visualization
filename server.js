@@ -52,7 +52,15 @@ const eventHubReader = new EventHubReader(iotHubConnectionString, eventHubConsum
   await eventHubReader.startReadMessage((message, date, deviceId) => {
     try {
       const payload = {
-        IotData: message,
+        // IotData: message,
+        IotData: {
+          temperature: message.temperature,
+          humidity: message.humidity,
+          PM25: message.PM25,
+          CO2: message.CO2,
+          latitude: message.lat,
+          longitude: message.lon,
+        },
         MessageDate: date || Date.now().toISOString(),
         DeviceId: deviceId,
       };
